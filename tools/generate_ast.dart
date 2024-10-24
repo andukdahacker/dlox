@@ -4,7 +4,7 @@ Future<void> main(List<String> args) async {
   await defineAst('./lib', 'Expr', [
     'Binary : Expr left, Token operator, Expr right',
     'Grouping : Expr expression',
-    'Literal : Object value',
+    'Literal : Object? value',
     'Unary: Token operator, Expr right',
   ]);
 }
@@ -20,7 +20,25 @@ Future<void> defineAst(
   sink.write('import \'package:dlox/token.dart\';');
 
   sink.write('''
-    sealed class $baseName {}\n
+    sealed class $baseName<T> {
+      T accept(ExprVisitor<T> visitor);
+    }\n
+  ''');
+
+  sink.write('''
+    abstract class ExprVisitor<T> {
+  ''');
+
+  for (final type in types) {
+    final className = type.split(':').first.trim();
+
+    sink.write('''
+      T visit$className$baseName($className ${baseName.toLowerCase()});\n
+    ''');
+  }
+
+  sink.write('''
+    }
   ''');
 
   for (final type in types) {
@@ -36,7 +54,7 @@ Future<void> defineAst(
 Future<void> defineType(
     IOSink sink, String baseName, String className, String fieldList) async {
   sink.write('''
-      class $className extends $baseName {\n
+      class $className<T> extends $baseName<T> {\n
       ''');
 
   final fields = fieldList.split(', ');
@@ -63,6 +81,13 @@ Future<void> defineType(
   }
 
   sink.write('});\n');
+
+  sink.write('''
+      @override
+      T accept(ExprVisitor<T> visitor) {
+        return visitor.visit$className$baseName(this);
+      }\n
+    ''');
 
   sink.write('}');
 }
