@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dlox/ast_printer.dart';
+import 'package:dlox/expr.dart';
+import 'package:dlox/parser.dart';
 import 'package:dlox/scanner.dart';
 import 'package:dlox/token.dart';
+import 'package:dlox/token_type_enum.dart';
 
 Future<void> runFile(String path) async {
   final file = File(path);
@@ -35,8 +39,18 @@ void run(String source) {
 
   final List<Token> tokens = scanner.scanTokens();
 
-  for (final token in tokens) {
-    print('token: ${token.type}');
+  // for (final token in tokens) {
+  //   print('token ${token.type}');
+  // }
+
+  final Parser parser = Parser(tokens: tokens);
+
+  final Expr? expr = parser.parse();
+
+  if (LoxErrorHandler.instance.hadError) return;
+
+  if (expr != null) {
+    print(AstPrinter().printAst(expr));
   }
 }
 
@@ -47,7 +61,16 @@ class LoxErrorHandler {
 
   bool hadError = false;
 
-  void error({required int line, required String message, String? where}) {
+  void report({required int line, required String message, String? where}) {
     print('[line $line] Error: ${where ?? ''}: $message');
+  }
+
+  void error(Token token, String message) {
+    if (token.type == TokenType.eof) {
+      report(line: token.line, where: ' at end', message: message);
+    } else {
+      report(
+          line: token.line, where: ' at \'${token.lexeme}\'', message: message);
+    }
   }
 }

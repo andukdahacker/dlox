@@ -67,7 +67,7 @@ class Scanner {
 
     if (isAtEnd) {
       LoxErrorHandler.instance
-          .error(line: _line, message: 'Unterminated string');
+          .report(line: _line, message: 'Unterminated string');
       return;
     }
 
@@ -143,7 +143,7 @@ class Scanner {
     while (nestLevel > 0) {
       if (isAtEnd) {
         LoxErrorHandler.instance
-            .error(line: _line, message: 'Unterminated block comment');
+            .report(line: _line, message: 'Unterminated block comment');
         return;
       }
 
@@ -237,7 +237,7 @@ class Scanner {
           _identifier();
         } else {
           LoxErrorHandler.instance
-              .error(line: _line, message: 'Unhandled char $char');
+              .report(line: _line, message: 'Unhandled char $char');
         }
     }
   }
