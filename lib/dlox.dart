@@ -3,10 +3,13 @@ import 'dart:io';
 
 import 'package:dlox/ast_printer.dart';
 import 'package:dlox/expr.dart';
+import 'package:dlox/intepreter.dart';
 import 'package:dlox/parser.dart';
 import 'package:dlox/scanner.dart';
 import 'package:dlox/token.dart';
 import 'package:dlox/token_type_enum.dart';
+
+final interpreter = Interpreter();
 
 Future<void> runFile(String path) async {
   final file = File(path);
@@ -48,10 +51,11 @@ void run(String source) {
   final Expr? expr = parser.parse();
 
   if (LoxErrorHandler.instance.hadError) return;
+  if (expr == null) return;
 
-  if (expr != null) {
-    print(AstPrinter().printAst(expr));
-  }
+  print(AstPrinter().printAst(expr));
+
+  interpreter.interpret(expr);
 }
 
 class LoxErrorHandler {
@@ -60,6 +64,7 @@ class LoxErrorHandler {
   static final LoxErrorHandler instance = LoxErrorHandler._();
 
   bool hadError = false;
+  bool hadRuntimeError = false;
 
   void report({required int line, required String message, String? where}) {
     print('[line $line] Error: ${where ?? ''}: $message');
@@ -72,5 +77,10 @@ class LoxErrorHandler {
       report(
           line: token.line, where: ' at \'${token.lexeme}\'', message: message);
     }
+  }
+
+  void runtimeError(RuntimeError error) {
+    print('${error.message}\n[line ${error.token.line}]');
+    hadRuntimeError = true;
   }
 }
