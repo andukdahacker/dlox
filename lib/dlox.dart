@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dlox/ast_printer.dart';
-import 'package:dlox/expr.dart';
 import 'package:dlox/intepreter.dart';
 import 'package:dlox/parser.dart';
 import 'package:dlox/scanner.dart';
@@ -17,10 +15,6 @@ Future<void> runFile(String path) async {
   final chars = await file.readAsString(encoding: utf8);
 
   run(chars);
-
-  if (LoxErrorHandler.instance.hadError) {
-    throw Exception('Had an error');
-  }
 }
 
 void runPrompt() {
@@ -38,24 +32,21 @@ void runPrompt() {
 }
 
 void run(String source) {
-  final scanner = Scanner(source);
+  try {
+    final scanner = Scanner(source);
 
-  final List<Token> tokens = scanner.scanTokens();
+    final List<Token> tokens = scanner.scanTokens();
 
-  // for (final token in tokens) {
-  //   print('token ${token.type}');
-  // }
+    final Parser parser = Parser(tokens: tokens);
 
-  final Parser parser = Parser(tokens: tokens);
+    final stmts = parser.parse();
 
-  final Expr? expr = parser.parse();
+    if (LoxErrorHandler.instance.hadError) return;
 
-  if (LoxErrorHandler.instance.hadError) return;
-  if (expr == null) return;
-
-  print(AstPrinter().printAst(expr));
-
-  interpreter.interpret(expr);
+    interpreter.interpret(stmts);
+  } catch (e) {
+    return;
+  }
 }
 
 class LoxErrorHandler {

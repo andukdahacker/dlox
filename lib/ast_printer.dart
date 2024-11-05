@@ -19,23 +19,28 @@ class AstPrinter implements ExprVisitor<String> {
   }
 
   @override
-  String visitBinaryExpr(Binary expr) {
+  String visitBinaryExpr(BinaryExpr expr) {
     return parenthesize(expr.operator.lexeme, [expr.left, expr.right]);
   }
 
   @override
-  String visitGroupingExpr(Grouping expr) {
+  String visitGroupingExpr(GroupingExpr expr) {
     return parenthesize('group', [expr.expression]);
   }
 
   @override
-  String visitLiteralExpr(Literal expr) {
+  String visitLiteralExpr(LiteralExpr expr) {
     if (expr.value == null) return 'nil';
     return expr.value.toString();
   }
 
   @override
-  String visitUnaryExpr(Unary expr) {
+  String visitUnaryExpr(UnaryExpr expr) {
     return parenthesize(expr.operator.lexeme, [expr.right]);
+  }
+
+  @override
+  String visitVariableExpr(VariableExpr expr) {
+    return expr.name.lexeme;
   }
 }

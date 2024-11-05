@@ -5,23 +5,25 @@ sealed class Expr<T> {
 }
 
 abstract class ExprVisitor<T> {
-  T visitBinaryExpr(Binary expr);
+  T visitBinaryExpr(BinaryExpr expr);
 
-  T visitGroupingExpr(Grouping expr);
+  T visitGroupingExpr(GroupingExpr expr);
 
-  T visitLiteralExpr(Literal expr);
+  T visitLiteralExpr(LiteralExpr expr);
 
-  T visitUnaryExpr(Unary expr);
+  T visitUnaryExpr(UnaryExpr expr);
+
+  T visitVariableExpr(VariableExpr expr);
 }
 
-class Binary<T> extends Expr<T> {
+class BinaryExpr<T> extends Expr<T> {
   final Expr left;
 
   final Token operator;
 
   final Expr right;
 
-  Binary({
+  BinaryExpr({
     required this.left,
     required this.operator,
     required this.right,
@@ -32,10 +34,10 @@ class Binary<T> extends Expr<T> {
   }
 }
 
-class Grouping<T> extends Expr<T> {
+class GroupingExpr<T> extends Expr<T> {
   final Expr expression;
 
-  Grouping({
+  GroupingExpr({
     required this.expression,
   });
   @override
@@ -44,10 +46,10 @@ class Grouping<T> extends Expr<T> {
   }
 }
 
-class Literal<T> extends Expr<T> {
+class LiteralExpr<T> extends Expr<T> {
   final Object? value;
 
-  Literal({
+  LiteralExpr({
     required this.value,
   });
   @override
@@ -56,17 +58,29 @@ class Literal<T> extends Expr<T> {
   }
 }
 
-class Unary<T> extends Expr<T> {
+class UnaryExpr<T> extends Expr<T> {
   final Token operator;
 
   final Expr right;
 
-  Unary({
+  UnaryExpr({
     required this.operator,
     required this.right,
   });
   @override
   T accept(ExprVisitor<T> visitor) {
     return visitor.visitUnaryExpr(this);
+  }
+}
+
+class VariableExpr<T> extends Expr<T> {
+  final Token name;
+
+  VariableExpr({
+    required this.name,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitVariableExpr(this);
   }
 }

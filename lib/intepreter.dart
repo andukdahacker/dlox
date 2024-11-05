@@ -1,17 +1,26 @@
 import 'package:dlox/dlox.dart';
+import 'package:dlox/environment.dart';
+import 'package:dlox/stmt.dart';
 
 import 'expr.dart';
 import 'token.dart';
 import 'token_type_enum.dart';
 
-class Interpreter implements ExprVisitor<Object?> {
-  void interpret(Expr expr) {
+class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
+  final Environment _environment = Environment();
+
+  void interpret(List<Stmt> statements) {
     try {
-      final value = _evaluate(expr);
-      print(value.toString());
+      for (final stmt in statements) {
+        _execute(stmt);
+      }
     } on RuntimeError catch (e) {
       LoxErrorHandler.instance.runtimeError(e);
     }
+  }
+
+  void _execute(Stmt stmt) {
+    stmt.accept(this);
   }
 
   Object? _evaluate(Expr expr) {
@@ -19,7 +28,7 @@ class Interpreter implements ExprVisitor<Object?> {
   }
 
   @override
-  Object? visitBinaryExpr(Binary expr) {
+  Object? visitBinaryExpr(BinaryExpr expr) {
     final left = _evaluate(expr.left);
     final right = _evaluate(expr.right);
 
@@ -75,17 +84,17 @@ class Interpreter implements ExprVisitor<Object?> {
   }
 
   @override
-  Object? visitGroupingExpr(Grouping expr) {
+  Object? visitGroupingExpr(GroupingExpr expr) {
     return _evaluate(expr.expression);
   }
 
   @override
-  Object? visitLiteralExpr(Literal expr) {
+  Object? visitLiteralExpr(LiteralExpr expr) {
     return expr.value;
   }
 
   @override
-  Object? visitUnaryExpr(Unary expr) {
+  Object? visitUnaryExpr(UnaryExpr expr) {
     final right = _evaluate(expr.right);
 
     switch (expr.operator.type) {
@@ -132,6 +141,34 @@ class Interpreter implements ExprVisitor<Object?> {
     if (object is bool) return object;
 
     return true;
+  }
+
+  @override
+  void visitExpressionStmt(ExpressionStmt stmt) {
+    _evaluate(stmt.expression);
+  }
+
+  @override
+  void visitPrintStmt(PrintStmt stmt) {
+    final value = _evaluate(stmt.expression);
+
+    print(value.toString());
+  }
+
+  @override
+  void visitVarStmt(VarStmt stmt) {
+    Object? value;
+
+    if (stmt.initializer != null) {
+      value = _evaluate(stmt.initializer!);
+    }
+
+    _environment.define(stmt.name.lexeme, value);
+  }
+
+  @override
+  Object? visitVariableExpr(VariableExpr expr) {
+    return _environment.getVar(expr.name);
   }
 }
 

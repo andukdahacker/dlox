@@ -6,6 +6,13 @@ Future<void> main(List<String> args) async {
     'Grouping : Expr expression',
     'Literal : Object? value',
     'Unary: Token operator, Expr right',
+    'Variable: Token name',
+  ]);
+
+  await defineAst('./lib', 'Stmt', [
+    'Expression: Expr expression',
+    'Print: Expr expression',
+    'Var: Token name, Expr? initializer'
   ]);
 }
 
@@ -21,19 +28,19 @@ Future<void> defineAst(
 
   sink.write('''
     sealed class $baseName<T> {
-      T accept(ExprVisitor<T> visitor);
+      T accept(${baseName}Visitor<T> visitor);
     }\n
   ''');
 
   sink.write('''
-    abstract class ExprVisitor<T> {
+    abstract class ${baseName}Visitor<T> {
   ''');
 
   for (final type in types) {
     final className = type.split(':').first.trim();
 
     sink.write('''
-      T visit$className$baseName($className ${baseName.toLowerCase()});\n
+      T visit$className$baseName($className$baseName ${baseName.toLowerCase()});\n
     ''');
   }
 
@@ -54,7 +61,7 @@ Future<void> defineAst(
 Future<void> defineType(
     IOSink sink, String baseName, String className, String fieldList) async {
   sink.write('''
-      class $className<T> extends $baseName<T> {\n
+      class $className$baseName<T> extends $baseName<T> {\n
       ''');
 
   final fields = fieldList.split(', ');
@@ -69,7 +76,7 @@ Future<void> defineType(
   }
 
   sink.write('''
-      $className({
+      $className$baseName({
     ''');
 
   for (final field in fields) {
@@ -84,7 +91,7 @@ Future<void> defineType(
 
   sink.write('''
       @override
-      T accept(ExprVisitor<T> visitor) {
+      T accept(${baseName}Visitor<T> visitor) {
         return visitor.visit$className$baseName(this);
       }\n
     ''');

@@ -1,5 +1,6 @@
 import 'package:dlox/dlox.dart';
 import 'package:dlox/expr.dart';
+import 'package:dlox/stmt.dart';
 import 'package:dlox/token.dart';
 import 'package:dlox/token_type_enum.dart';
 
@@ -9,14 +10,65 @@ class Parser {
 
   Parser({required this.tokens});
 
-  Expr? parse() {
+  List<Stmt> parse() {
+    final List<Stmt> statements = [];
+
+    while (!_isAtEnd()) {
+      statements.add(_declaration());
+    }
+
+    return statements;
+  }
+
+  Stmt _declaration() {
     try {
-      return _expression();
-    } on ParseError catch (e) {
-      return null;
-    } catch (e) {
+      if (_match([TokenType.tVar])) {
+        return _varDeclaration();
+      }
+
+      return _statement();
+    } on ParseError {
+      _synchronize();
       rethrow;
     }
+  }
+
+  Stmt _varDeclaration() {
+    final name = _consume(TokenType.identifier, 'Expect variable name.');
+
+    Expr? initializer;
+
+    if (_match([TokenType.equal])) {
+      initializer = _expression();
+    }
+
+    _consume(TokenType.semicolon, 'Expect \';\' after variable declaration');
+
+    return VarStmt(name: name, initializer: initializer);
+  }
+
+  Stmt _statement() {
+    if (_match([TokenType.print])) {
+      return _printStatement();
+    }
+
+    return _expressionStatement();
+  }
+
+  Stmt _printStatement() {
+    final expr = _expression();
+
+    _consume(TokenType.semicolon, 'Expect \';\' after value;');
+
+    return PrintStmt(expression: expr);
+  }
+
+  Stmt _expressionStatement() {
+    final expr = _expression();
+
+    _consume(TokenType.semicolon, 'Expect \';\' after value;');
+
+    return ExpressionStmt(expression: expr);
   }
 
   Expr _expression() {
@@ -29,7 +81,7 @@ class Parser {
     while (_match([TokenType.bangEqual, TokenType.equalEqual])) {
       final Token operator = _previous();
       final Expr right = _comparison();
-      expr = Binary(left: expr, operator: operator, right: right);
+      expr = BinaryExpr(left: expr, operator: operator, right: right);
     }
 
     return expr;
@@ -46,7 +98,7 @@ class Parser {
     ])) {
       final Token operator = _previous();
       final Expr right = _term();
-      expr = Binary(left: expr, operator: operator, right: right);
+      expr = BinaryExpr(left: expr, operator: operator, right: right);
     }
 
     return expr;
@@ -58,7 +110,7 @@ class Parser {
     while (_match([TokenType.minus, TokenType.plus])) {
       final Token operator = _previous();
       final Expr right = _factor();
-      expr = Binary(left: expr, operator: operator, right: right);
+      expr = BinaryExpr(left: expr, operator: operator, right: right);
     }
 
     return expr;
@@ -70,7 +122,7 @@ class Parser {
     while (_match([TokenType.slash, TokenType.star])) {
       final Token operator = _previous();
       final Expr right = _unary();
-      expr = Binary(left: expr, operator: operator, right: right);
+      expr = BinaryExpr(left: expr, operator: operator, right: right);
     }
 
     return expr;
@@ -80,24 +132,26 @@ class Parser {
     if (_match([TokenType.bang, TokenType.minus])) {
       final Token operator = _previous();
       final Expr right = _unary();
-      return Unary(operator: operator, right: right);
+      return UnaryExpr(operator: operator, right: right);
     }
 
     return _primary();
   }
 
   Expr _primary() {
-    if (_match([TokenType.tFalse])) return Literal(value: false);
-    if (_match([TokenType.tTrue])) return Literal(value: true);
-    if (_match([TokenType.nil])) return Literal(value: null);
+    if (_match([TokenType.tFalse])) return LiteralExpr(value: false);
+    if (_match([TokenType.tTrue])) return LiteralExpr(value: true);
+    if (_match([TokenType.nil])) return LiteralExpr(value: null);
     if (_match([TokenType.number, TokenType.string])) {
-      return Literal(value: _previous().literal);
+      return LiteralExpr(value: _previous().literal);
     }
+
+    if (_match([TokenType.identifier])) return VariableExpr(name: _previous());
 
     if (_match([TokenType.leftParen])) {
       final expr = _expression();
       _consume(TokenType.rightParen, 'Expect \')\' after expression.');
-      return Grouping(expression: expr);
+      return GroupingExpr(expression: expr);
     }
 
     throw error(_peek(), 'Expect expression');
