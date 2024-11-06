@@ -14,23 +14,23 @@ class Parser {
     final List<Stmt> statements = [];
 
     while (!_isAtEnd()) {
-      statements.add(_declaration());
+      try {
+        statements.add(_declaration());
+      } on ParseError {
+        _synchronize();
+        continue;
+      }
     }
 
     return statements;
   }
 
   Stmt _declaration() {
-    try {
-      if (_match([TokenType.tVar])) {
-        return _varDeclaration();
-      }
-
-      return _statement();
-    } on ParseError {
-      _synchronize();
-      rethrow;
+    if (_match([TokenType.tVar])) {
+      return _varDeclaration();
     }
+
+    return _statement();
   }
 
   Stmt _varDeclaration() {
@@ -52,6 +52,10 @@ class Parser {
       return _printStatement();
     }
 
+    if (_match([TokenType.leftBrace])) {
+      return _block();
+    }
+
     return _expressionStatement();
   }
 
@@ -71,8 +75,39 @@ class Parser {
     return ExpressionStmt(expression: expr);
   }
 
+  Stmt _block() {
+    final List<Stmt> statements = [];
+
+    while (!_check(TokenType.rightBrace) && !_isAtEnd()) {
+      statements.add(_declaration());
+    }
+
+    _consume(TokenType.rightBrace, 'Expect } after block.');
+
+    return BlockStmt(statements: statements);
+  }
+
   Expr _expression() {
-    return _equality();
+    return _assigment();
+  }
+
+  Expr _assigment() {
+    final expr = _equality();
+
+    if (_match([TokenType.equal])) {
+      final equals = _previous();
+
+      final value = _assigment();
+
+      if (expr is VariableExpr) {
+        final name = expr.name;
+        return AssignExpr(name: name, value: value);
+      }
+
+      error(equals, 'Invalid assignment target.');
+    }
+
+    return expr;
   }
 
   Expr _equality() {

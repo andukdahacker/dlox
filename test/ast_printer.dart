@@ -21,6 +21,16 @@ void main(List<String> args) {
     operator: Token(type: TokenType.star, lexeme: '*', line: 1),
   );
 
+  final Expr varExpr = VariableExpr(
+      name: Token(type: TokenType.identifier, lexeme: 'a', line: 1));
+
+  final Expr assignExpr = AssignExpr(
+    name: Token(type: TokenType.identifier, lexeme: 'a', line: 1),
+    value: expr,
+  );
+
   print(AstPrinter().printAst(simpleExpr));
   print(AstPrinter().printAst(expr));
+  print(AstPrinter().printAst(varExpr));
+  print(AstPrinter().printAst(assignExpr));
 }

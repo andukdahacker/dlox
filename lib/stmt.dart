@@ -7,11 +7,25 @@ sealed class Stmt<T> {
 }
 
 abstract class StmtVisitor<T> {
+  T visitBlockStmt(BlockStmt stmt);
+
   T visitExpressionStmt(ExpressionStmt stmt);
 
   T visitPrintStmt(PrintStmt stmt);
 
   T visitVarStmt(VarStmt stmt);
+}
+
+class BlockStmt<T> extends Stmt<T> {
+  final List<Stmt> statements;
+
+  BlockStmt({
+    required this.statements,
+  });
+  @override
+  T accept(StmtVisitor<T> visitor) {
+    return visitor.visitBlockStmt(this);
+  }
 }
 
 class ExpressionStmt<T> extends Stmt<T> {

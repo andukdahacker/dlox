@@ -7,7 +7,7 @@ import 'token.dart';
 import 'token_type_enum.dart';
 
 class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
-  final Environment _environment = Environment();
+  Environment _environment = Environment();
 
   void interpret(List<Stmt> statements) {
     try {
@@ -60,7 +60,7 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
         throw RuntimeError(
           token: expr.operator,
-          message: 'Operands must be two numbers or two strings',
+          message: 'Operands must be either a string or a number',
         );
       case TokenType.greater:
         _checkNumberOperands(expr.operator, left, right);
@@ -169,6 +169,34 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
   @override
   Object? visitVariableExpr(VariableExpr expr) {
     return _environment.getVar(expr.name);
+  }
+
+  @override
+  Object? visitAssignExpr(AssignExpr expr) {
+    final value = _evaluate(expr.value);
+
+    _environment.assign(expr.name, value);
+
+    return value;
+  }
+
+  @override
+  void visitBlockStmt(BlockStmt stmt) {
+    _executeBlock(stmt.statements, Environment(enclosing: _environment));
+  }
+
+  void _executeBlock(List<Stmt> statements, Environment environment) {
+    final previousEnv = _environment;
+
+    try {
+      _environment = environment;
+
+      for (final stmt in statements) {
+        _execute(stmt);
+      }
+    } finally {
+      _environment = previousEnv;
+    }
   }
 }
 

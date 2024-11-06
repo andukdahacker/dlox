@@ -2,6 +2,7 @@ import 'dart:io';
 
 Future<void> main(List<String> args) async {
   await defineAst('./lib', 'Expr', [
+    'Assign: Token name, Expr value',
     'Binary : Expr left, Token operator, Expr right',
     'Grouping : Expr expression',
     'Literal : Object? value',
@@ -10,6 +11,7 @@ Future<void> main(List<String> args) async {
   ]);
 
   await defineAst('./lib', 'Stmt', [
+    'Block: List<Stmt> statements',
     'Expression: Expr expression',
     'Print: Expr expression',
     'Var: Token name, Expr? initializer'
