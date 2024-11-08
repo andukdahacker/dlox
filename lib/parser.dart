@@ -48,15 +48,99 @@ class Parser {
   }
 
   Stmt _statement() {
+    if (_match([TokenType.tIf])) {
+      return _ifStatement();
+    }
+
     if (_match([TokenType.print])) {
       return _printStatement();
+    }
+
+    if (_match([TokenType.tWhile])) {
+      return _whileStatement();
     }
 
     if (_match([TokenType.leftBrace])) {
       return _block();
     }
 
+    if (_match([TokenType.tFor])) {
+      return _forStatement();
+    }
+
     return _expressionStatement();
+  }
+
+  Stmt _forStatement() {
+    _consume(TokenType.leftParen, 'Expect ( after for statement');
+    Stmt? initializer;
+    if (_match([TokenType.semicolon])) {
+      initializer = null;
+    } else if (_match([TokenType.tVar])) {
+      initializer = _varDeclaration();
+    } else {
+      initializer = _expressionStatement();
+    }
+
+    Expr? condition;
+
+    if (!_check(TokenType.semicolon)) {
+      condition = _expression();
+    }
+
+    _consume(TokenType.semicolon, 'Expect ; after loop condition');
+
+    Expr? increment;
+
+    if (!_check(TokenType.rightParen)) {
+      increment = _expression();
+    }
+
+    _consume(TokenType.rightParen, 'Expect ) after for clauses');
+
+    Stmt body = _statement();
+
+    if (increment != null) {
+      body =
+          BlockStmt(statements: [body, ExpressionStmt(expression: increment)]);
+    }
+
+    condition ??= LiteralExpr(value: true);
+
+    body = WhileStmt(condition: condition, body: body);
+
+    if (initializer != null) {
+      body = BlockStmt(statements: [initializer, body]);
+    }
+
+    return body;
+  }
+
+  Stmt _whileStatement() {
+    _consume(TokenType.leftParen, 'Expect ( after while statement');
+    final condition = _expression();
+    _consume(TokenType.rightParen, 'Expect ) after while condition');
+
+    Stmt statement = _statement();
+
+    return WhileStmt(condition: condition, body: statement);
+  }
+
+  Stmt _ifStatement() {
+    _consume(TokenType.leftParen, 'Expect ( after if statement');
+    final condition = _expression();
+    _consume(TokenType.rightParen, 'Expect ) after if condition');
+
+    Stmt thenBranch = _statement();
+
+    Stmt? elseBranch;
+
+    if (_match([TokenType.tElse])) {
+      elseBranch = _statement();
+    }
+
+    return IfStmt(
+        condition: condition, thenBranch: thenBranch, elseBranch: elseBranch);
   }
 
   Stmt _printStatement() {
@@ -92,7 +176,7 @@ class Parser {
   }
 
   Expr _assigment() {
-    final expr = _equality();
+    final expr = _or();
 
     if (_match([TokenType.equal])) {
       final equals = _previous();
@@ -105,6 +189,32 @@ class Parser {
       }
 
       error(equals, 'Invalid assignment target.');
+    }
+
+    return expr;
+  }
+
+  Expr _or() {
+    Expr expr = _and();
+
+    while (_match([TokenType.or])) {
+      final operator = _previous();
+      Expr right = _and();
+
+      expr = LogicalExpr(left: expr, operator: operator, right: right);
+    }
+
+    return expr;
+  }
+
+  Expr _and() {
+    Expr expr = _equality();
+
+    while (_match([TokenType.and])) {
+      final operator = _previous();
+      Expr right = _equality();
+
+      expr = LogicalExpr(left: expr, operator: operator, right: right);
     }
 
     return expr;

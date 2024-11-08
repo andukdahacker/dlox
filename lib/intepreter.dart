@@ -16,6 +16,8 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
       }
     } on RuntimeError catch (e) {
       LoxErrorHandler.instance.runtimeError(e);
+    } on UninitializedError catch (e) {
+      LoxErrorHandler.instance.error(e.token, 'Uninitialized variable');
     }
   }
 
@@ -145,7 +147,9 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   @override
   void visitExpressionStmt(ExpressionStmt stmt) {
-    _evaluate(stmt.expression);
+    final value = _evaluate(stmt.expression);
+
+    print(value);
   }
 
   @override
@@ -163,7 +167,7 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
       value = _evaluate(stmt.initializer!);
     }
 
-    _environment.define(stmt.name.lexeme, value);
+    _environment.define(stmt.name, value);
   }
 
   @override
@@ -196,6 +200,35 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
       }
     } finally {
       _environment = previousEnv;
+    }
+  }
+
+  @override
+  void visitIfStmt(IfStmt stmt) {
+    if (_isTruthy(stmt.condition)) {
+      _execute(stmt.thenBranch);
+    } else if (stmt.elseBranch != null) {
+      _execute(stmt.elseBranch!);
+    }
+  }
+
+  @override
+  Object? visitLogicalExpr(LogicalExpr expr) {
+    final left = _evaluate(expr.left);
+
+    if (expr.operator.type == TokenType.or) {
+      if (_isTruthy(left)) return left;
+    } else {
+      if (!_isTruthy(left)) return left;
+    }
+
+    return _evaluate(expr.right);
+  }
+
+  @override
+  void visitWhileStmt(WhileStmt stmt) {
+    while (_isTruthy(_evaluate(stmt.condition))) {
+      _execute(stmt.body);
     }
   }
 }

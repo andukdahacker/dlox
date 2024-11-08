@@ -48,4 +48,9 @@ class AstPrinter implements ExprVisitor<String> {
   String visitAssignExpr(AssignExpr expr) {
     return parenthesize('set ${expr.name.lexeme}', [expr.value]);
   }
+
+  @override
+  String visitLogicalExpr(LogicalExpr expr) {
+    return parenthesize(expr.operator.lexeme, [expr.left, expr.right]);
+  }
 }
