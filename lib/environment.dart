@@ -14,7 +14,6 @@ class Environment {
 
   void assign(Token name, Object? value) {
     if (values.containsKey(name.lexeme)) {
-      print('${name.lexeme} = ${value.toString()}');
       values[name.lexeme] = value;
       return;
     }

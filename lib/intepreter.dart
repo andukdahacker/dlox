@@ -1,5 +1,8 @@
 import 'package:dlox/dlox.dart';
 import 'package:dlox/environment.dart';
+import 'package:dlox/lox_callable.dart';
+import 'package:dlox/lox_function.dart';
+import 'package:dlox/return.dart';
 import 'package:dlox/stmt.dart';
 
 import 'expr.dart';
@@ -7,7 +10,16 @@ import 'token.dart';
 import 'token_type_enum.dart';
 
 class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
-  Environment _environment = Environment();
+  final Environment globals = Environment();
+
+  late Environment _environment = globals;
+
+  Interpreter() {
+    globals.define(
+      Token(type: TokenType.identifier, lexeme: 'clock', line: -1),
+      ClockNativeCallable(),
+    );
+  }
 
   void interpret(List<Stmt> statements) {
     try {
@@ -37,22 +49,22 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
     switch (expr.operator.type) {
       case TokenType.minus:
         _checkNumberOperands(expr.operator, left, right);
-        return (left as double) - (right as double);
+        return (left as num) - (right as num);
       case TokenType.slash:
         _checkNumberOperands(expr.operator, left, right);
-        if ((right as double) == 0) {
+        if ((right as num) == 0) {
           throw RuntimeError(
               token: expr.operator, message: 'Cannot divide by zero');
         }
-        return (left as double) / (right);
+        return (left as num) / (right);
       case TokenType.star:
         _checkNumberOperands(expr.operator, left, right);
-        return (left as double) * (right as double);
+        return (left as num) * (right as num);
       case TokenType.plus:
         if (left is String && right is String) {
           return left + right;
         }
-        if (left is double && right is double) {
+        if (left is num && right is num) {
           return left + right;
         }
 
@@ -66,16 +78,16 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
         );
       case TokenType.greater:
         _checkNumberOperands(expr.operator, left, right);
-        return (left as double) > (right as double);
+        return (left as num) > (right as num);
       case TokenType.greateEqual:
         _checkNumberOperands(expr.operator, left, right);
-        return (left as double) >= (right as double);
+        return (left as num) >= (right as num);
       case TokenType.less:
         _checkNumberOperands(expr.operator, left, right);
-        return (left as double) < (right as double);
+        return (left as num) < (right as num);
       case TokenType.lessEqual:
         _checkNumberOperands(expr.operator, left, right);
-        return (left as double) <= (right as double);
+        return (left as num) <= (right as num);
       case TokenType.bangEqual:
         return !_isEqual(left, right);
       case TokenType.equalEqual:
@@ -102,7 +114,7 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
     switch (expr.operator.type) {
       case TokenType.minus:
         _checkNumberOperand(expr.operator, right);
-        return -(right as double);
+        return -(right as num);
       case TokenType.bang:
         return !_isTruthy(right);
       default:
@@ -111,15 +123,15 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
   }
 
   void _checkNumberOperand(Token operator, Object? operand) {
-    if (operand is double) return;
+    if (operand is num) return;
 
     throw RuntimeError(token: operator, message: 'Operand must be a number');
   }
 
   void _checkNumberOperands(Token operator, Object? left, Object? right) {
-    if (left is double && right is double) return;
+    if (left is num && right is num) return;
 
-    throw RuntimeError(token: operator, message: 'Operand must be a numbers');
+    throw RuntimeError(token: operator, message: 'Operand must be numbers');
   }
 
   bool _isEqual(Object? a, Object? b) {
@@ -147,9 +159,7 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   @override
   void visitExpressionStmt(ExpressionStmt stmt) {
-    final value = _evaluate(stmt.expression);
-
-    print(value);
+    _evaluate(stmt.expression);
   }
 
   @override
@@ -186,10 +196,10 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   @override
   void visitBlockStmt(BlockStmt stmt) {
-    _executeBlock(stmt.statements, Environment(enclosing: _environment));
+    executeBlock(stmt.statements, Environment(enclosing: _environment));
   }
 
-  void _executeBlock(List<Stmt> statements, Environment environment) {
+  void executeBlock(List<Stmt> statements, Environment environment) {
     final previousEnv = _environment;
 
     try {
@@ -205,7 +215,7 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   @override
   void visitIfStmt(IfStmt stmt) {
-    if (_isTruthy(stmt.condition)) {
+    if (_isTruthy(_evaluate(stmt.condition))) {
       _execute(stmt.thenBranch);
     } else if (stmt.elseBranch != null) {
       _execute(stmt.elseBranch!);
@@ -231,6 +241,50 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
       _execute(stmt.body);
     }
   }
+
+  @override
+  Object? visitCallExpr(CallExpr expr) {
+    final callee = _evaluate(expr.callee);
+
+    final List<Object?> arguments = [];
+
+    for (final args in expr.arguments ?? []) {
+      arguments.add(_evaluate(args));
+    }
+
+    if (callee is! LoxCallable) {
+      throw RuntimeError(
+          token: expr.paren, message: 'Can only call functions and classes');
+    }
+
+    if (arguments.length != callee.arity()) {
+      throw RuntimeError(
+        token: expr.paren,
+        message:
+            'Expected ${callee.arity()} arguments but got ${arguments.length}.',
+      );
+    }
+
+    return callee.call(this, arguments);
+  }
+
+  @override
+  void visitFunctionStmt(FunctionStmt stmt) {
+    final function = LoxFunction(declaration: stmt, closure: _environment);
+
+    _environment.define(stmt.name, function);
+  }
+
+  @override
+  void visitReturnStmt(ReturnStmt stmt) {
+    Object? value;
+
+    if (stmt.value != null) {
+      value = _evaluate(stmt.value!);
+    }
+
+    throw Return(value);
+  }
 }
 
 class RuntimeError implements Exception {
@@ -238,4 +292,21 @@ class RuntimeError implements Exception {
   final String message;
 
   RuntimeError({required this.token, required this.message});
+}
+
+class ClockNativeCallable implements LoxCallable {
+  @override
+  int arity() {
+    return 0;
+  }
+
+  @override
+  Object? call(Interpreter interpreter, List<Object?> arguments) {
+    return DateTime.now().microsecondsSinceEpoch;
+  }
+
+  @override
+  String toString() {
+    return '<native fn>';
+  }
 }

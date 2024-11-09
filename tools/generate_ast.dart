@@ -4,6 +4,7 @@ Future<void> main(List<String> args) async {
   await defineAst('./lib', 'Expr', [
     'Assign: Token name, Expr value',
     'Binary : Expr left, Token operator, Expr right',
+    'Call: Expr callee, Token paren, List<Expr>? arguments',
     'Grouping : Expr expression',
     'Literal : Object? value',
     'Logical: Expr left, Token operator, Expr right',
@@ -18,6 +19,8 @@ Future<void> main(List<String> args) async {
     'Print: Expr expression',
     'Var: Token name, Expr? initializer',
     'While: Expr condition, Stmt body',
+    'Function: Token name, List<Token>? parameters, List<Stmt> body',
+    'Return: Token keyword, Expr? value',
   ]);
 }
 

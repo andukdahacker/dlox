@@ -30,6 +30,10 @@ class Parser {
       return _varDeclaration();
     }
 
+    if (_match([TokenType.fun])) {
+      return _function('function');
+    }
+
     return _statement();
   }
 
@@ -47,6 +51,36 @@ class Parser {
     return VarStmt(name: name, initializer: initializer);
   }
 
+  FunctionStmt _function(String kind) {
+    final name = _consume(TokenType.identifier, 'Expect $kind name.');
+
+    _consume(TokenType.leftParen, 'Expect ( after $kind name.');
+
+    final List<Token> parameters = [];
+
+    if (!_check(TokenType.rightParen)) {
+      do {
+        if (parameters.length >= 255) {
+          error(_peek(), 'Cannot have more than 255 parameters');
+        }
+
+        parameters.add(_consume(TokenType.identifier, 'Expect parameter name'));
+      } while (_match([TokenType.comma]));
+    }
+
+    _consume(TokenType.rightParen, 'Expect ) after parameters');
+
+    _consume(TokenType.leftBrace, 'Expect { after function declaration');
+
+    final body = _block();
+
+    return FunctionStmt(
+      name: name,
+      parameters: parameters,
+      body: body,
+    );
+  }
+
   Stmt _statement() {
     if (_match([TokenType.tIf])) {
       return _ifStatement();
@@ -61,14 +95,32 @@ class Parser {
     }
 
     if (_match([TokenType.leftBrace])) {
-      return _block();
+      return BlockStmt(statements: _block());
     }
 
     if (_match([TokenType.tFor])) {
       return _forStatement();
     }
 
+    if (_match([TokenType.tReturn])) {
+      return _returnStatement();
+    }
+
     return _expressionStatement();
+  }
+
+  Stmt _returnStatement() {
+    final keyword = _previous();
+
+    Expr? value;
+
+    if (!_check(TokenType.semicolon)) {
+      value = _expression();
+    }
+
+    _consume(TokenType.semicolon, 'Expect ; after return statement');
+
+    return ReturnStmt(keyword: keyword, value: value);
   }
 
   Stmt _forStatement() {
@@ -159,7 +211,7 @@ class Parser {
     return ExpressionStmt(expression: expr);
   }
 
-  Stmt _block() {
+  List<Stmt> _block() {
     final List<Stmt> statements = [];
 
     while (!_check(TokenType.rightBrace) && !_isAtEnd()) {
@@ -168,7 +220,7 @@ class Parser {
 
     _consume(TokenType.rightBrace, 'Expect } after block.');
 
-    return BlockStmt(statements: statements);
+    return statements;
   }
 
   Expr _expression() {
@@ -280,7 +332,39 @@ class Parser {
       return UnaryExpr(operator: operator, right: right);
     }
 
-    return _primary();
+    return _call();
+  }
+
+  Expr _call() {
+    Expr expr = _primary();
+
+    while (true) {
+      if (_match([TokenType.leftParen])) {
+        expr = _finishCall(expr);
+      } else {
+        break;
+      }
+    }
+
+    return expr;
+  }
+
+  Expr _finishCall(Expr expr) {
+    final List<Expr> arguments = [];
+
+    if (!_check(TokenType.rightParen)) {
+      do {
+        if (arguments.length >= 255) {
+          error(_peek(), 'Cannot have more than 255 arguments.');
+        }
+        arguments.add(_expression());
+      } while (_match([TokenType.comma]));
+    }
+
+    Token paren =
+        _consume(TokenType.rightParen, 'Expect \')\' after arguments.');
+
+    return CallExpr(callee: expr, paren: paren, arguments: arguments);
   }
 
   Expr _primary() {

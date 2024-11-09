@@ -18,6 +18,10 @@ abstract class StmtVisitor<T> {
   T visitVarStmt(VarStmt stmt);
 
   T visitWhileStmt(WhileStmt stmt);
+
+  T visitFunctionStmt(FunctionStmt stmt);
+
+  T visitReturnStmt(ReturnStmt stmt);
 }
 
 class BlockStmt<T> extends Stmt<T> {
@@ -101,5 +105,38 @@ class WhileStmt<T> extends Stmt<T> {
   @override
   T accept(StmtVisitor<T> visitor) {
     return visitor.visitWhileStmt(this);
+  }
+}
+
+class FunctionStmt<T> extends Stmt<T> {
+  final Token name;
+
+  final List<Token>? parameters;
+
+  final List<Stmt> body;
+
+  FunctionStmt({
+    required this.name,
+    required this.parameters,
+    required this.body,
+  });
+  @override
+  T accept(StmtVisitor<T> visitor) {
+    return visitor.visitFunctionStmt(this);
+  }
+}
+
+class ReturnStmt<T> extends Stmt<T> {
+  final Token keyword;
+
+  final Expr? value;
+
+  ReturnStmt({
+    required this.keyword,
+    required this.value,
+  });
+  @override
+  T accept(StmtVisitor<T> visitor) {
+    return visitor.visitReturnStmt(this);
   }
 }
