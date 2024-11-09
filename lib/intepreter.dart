@@ -301,10 +301,6 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
       closure: _environment,
     );
 
-    if (function.arity() == 0) {
-      function.call(this, []);
-    }
-
     return function;
   }
 }

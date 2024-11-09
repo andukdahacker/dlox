@@ -209,6 +209,11 @@ class Parser {
   Stmt _expressionStatement() {
     final expr = _expression();
 
+    if (expr is LambdaExpr) {
+      error(_previous(),
+          'Anonymous function cannot be used as a standalone statement. Try assigning it or calling it directly');
+    }
+
     _consume(TokenType.semicolon, 'Expect \';\' after value;');
 
     return ExpressionStmt(expression: expr);
