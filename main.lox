@@ -13,4 +13,4 @@ test(fun (a, b) {
 
 fun () {
 	print "hello";
-}
+};

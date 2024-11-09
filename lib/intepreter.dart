@@ -273,10 +273,6 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
     final function = LoxFunction(declaration: stmt, closure: _environment);
 
     _environment.define(stmt.name, function);
-
-    if (function.arity() == 0) {
-      function.call(this, []);
-    }
   }
 
   @override
@@ -292,7 +288,7 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   @override
   Object? visitLambdaExpr(LambdaExpr expr) {
-    return LoxFunction(
+    final function = LoxFunction(
       declaration: FunctionStmt(
         name: Token(
           type: TokenType.identifier,
@@ -304,6 +300,12 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
       ),
       closure: _environment,
     );
+
+    if (function.arity() == 0) {
+      function.call(this, []);
+    }
+
+    return function;
   }
 }
 

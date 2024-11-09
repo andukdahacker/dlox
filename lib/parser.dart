@@ -30,8 +30,11 @@ class Parser {
       return _varDeclaration();
     }
 
-    if (_match([TokenType.fun])) {
-      return _function('function');
+    if (_peek().type == TokenType.fun &&
+        _peekNext()?.type == TokenType.identifier) {
+      if (_match([TokenType.fun])) {
+        return _function('function');
+      }
     }
 
     return _statement();
@@ -443,6 +446,11 @@ class Parser {
 
   Token _peek() {
     return tokens[_current];
+  }
+
+  Token? _peekNext() {
+    if ((_current + 1) > tokens.length) return null;
+    return tokens[_current + 1];
   }
 
   Token _previous() {
