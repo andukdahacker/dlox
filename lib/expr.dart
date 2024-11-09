@@ -1,143 +1,162 @@
-import 'package:dlox/token.dart';    sealed class Expr<T> {
-      T accept(ExprVisitor<T> visitor);
-    }
+import 'package:dlox/token.dart';
 
-      abstract class ExprVisitor<T> {
-        T visitAssignExpr(AssignExpr expr);
+import 'stmt.dart';
 
-          T visitBinaryExpr(BinaryExpr expr);
+sealed class Expr<T> {
+  T accept(ExprVisitor<T> visitor);
+}
 
-          T visitCallExpr(CallExpr expr);
+abstract class ExprVisitor<T> {
+  T visitAssignExpr(AssignExpr expr);
 
-          T visitGroupingExpr(GroupingExpr expr);
+  T visitBinaryExpr(BinaryExpr expr);
 
-          T visitLiteralExpr(LiteralExpr expr);
+  T visitCallExpr(CallExpr expr);
 
-          T visitLogicalExpr(LogicalExpr expr);
+  T visitLambdaExpr(LambdaExpr expr);
 
-          T visitUnaryExpr(UnaryExpr expr);
+  T visitGroupingExpr(GroupingExpr expr);
 
-          T visitVariableExpr(VariableExpr expr);
+  T visitLiteralExpr(LiteralExpr expr);
 
-        }
-        class AssignExpr<T> extends Expr<T> {
+  T visitLogicalExpr(LogicalExpr expr);
 
-              final Token name;
+  T visitUnaryExpr(UnaryExpr expr);
 
-              final Expr value;
+  T visitVariableExpr(VariableExpr expr);
+}
 
-            AssignExpr({
-        required this.name,
-        required this.value,
-    });
-      @override
-      T accept(ExprVisitor<T> visitor) {
-        return visitor.visitAssignExpr(this);
-      }
+class AssignExpr<T> extends Expr<T> {
+  final Token name;
 
-    }      class BinaryExpr<T> extends Expr<T> {
+  final Expr value;
 
-              final Expr left;
+  AssignExpr({
+    required this.name,
+    required this.value,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitAssignExpr(this);
+  }
+}
 
-              final Token operator;
+class BinaryExpr<T> extends Expr<T> {
+  final Expr left;
 
-              final Expr right;
+  final Token operator;
 
-            BinaryExpr({
-        required this.left,
-        required this.operator,
-        required this.right,
-    });
-      @override
-      T accept(ExprVisitor<T> visitor) {
-        return visitor.visitBinaryExpr(this);
-      }
+  final Expr right;
 
-    }      class CallExpr<T> extends Expr<T> {
+  BinaryExpr({
+    required this.left,
+    required this.operator,
+    required this.right,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitBinaryExpr(this);
+  }
+}
 
-              final Expr callee;
+class CallExpr<T> extends Expr<T> {
+  final Expr callee;
 
-              final Token paren;
+  final Token paren;
 
-              final List<Expr>? arguments;
+  final List<Expr>? arguments;
 
-            CallExpr({
-        required this.callee,
-        required this.paren,
-        required this.arguments,
-    });
-      @override
-      T accept(ExprVisitor<T> visitor) {
-        return visitor.visitCallExpr(this);
-      }
+  CallExpr({
+    required this.callee,
+    required this.paren,
+    required this.arguments,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitCallExpr(this);
+  }
+}
 
-    }      class GroupingExpr<T> extends Expr<T> {
+class LambdaExpr<T> extends Expr<T> {
+  final List<Token>? parameters;
 
-              final Expr expression;
+  final List<Stmt> body;
 
-            GroupingExpr({
-        required this.expression,
-    });
-      @override
-      T accept(ExprVisitor<T> visitor) {
-        return visitor.visitGroupingExpr(this);
-      }
+  LambdaExpr({
+    required this.parameters,
+    required this.body,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitLambdaExpr(this);
+  }
+}
 
-    }      class LiteralExpr<T> extends Expr<T> {
+class GroupingExpr<T> extends Expr<T> {
+  final Expr expression;
 
-              final Object? value;
+  GroupingExpr({
+    required this.expression,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitGroupingExpr(this);
+  }
+}
 
-            LiteralExpr({
-        required this.value,
-    });
-      @override
-      T accept(ExprVisitor<T> visitor) {
-        return visitor.visitLiteralExpr(this);
-      }
+class LiteralExpr<T> extends Expr<T> {
+  final Object? value;
 
-    }      class LogicalExpr<T> extends Expr<T> {
+  LiteralExpr({
+    required this.value,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitLiteralExpr(this);
+  }
+}
 
-              final Expr left;
+class LogicalExpr<T> extends Expr<T> {
+  final Expr left;
 
-              final Token operator;
+  final Token operator;
 
-              final Expr right;
+  final Expr right;
 
-            LogicalExpr({
-        required this.left,
-        required this.operator,
-        required this.right,
-    });
-      @override
-      T accept(ExprVisitor<T> visitor) {
-        return visitor.visitLogicalExpr(this);
-      }
+  LogicalExpr({
+    required this.left,
+    required this.operator,
+    required this.right,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitLogicalExpr(this);
+  }
+}
 
-    }      class UnaryExpr<T> extends Expr<T> {
+class UnaryExpr<T> extends Expr<T> {
+  final Token operator;
 
-              final Token operator;
+  final Expr right;
 
-              final Expr right;
+  UnaryExpr({
+    required this.operator,
+    required this.right,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitUnaryExpr(this);
+  }
+}
 
-            UnaryExpr({
-        required this.operator,
-        required this.right,
-    });
-      @override
-      T accept(ExprVisitor<T> visitor) {
-        return visitor.visitUnaryExpr(this);
-      }
+class VariableExpr<T> extends Expr<T> {
+  final Token name;
 
-    }      class VariableExpr<T> extends Expr<T> {
-
-              final Token name;
-
-            VariableExpr({
-        required this.name,
-    });
-      @override
-      T accept(ExprVisitor<T> visitor) {
-        return visitor.visitVariableExpr(this);
-      }
-
-    }
+  VariableExpr({
+    required this.name,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitVariableExpr(this);
+  }
+}

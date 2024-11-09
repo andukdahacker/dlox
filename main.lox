@@ -1,16 +1,16 @@
-var startTime = clock();
-
-fun test() {
-	var n = 1;
-
-	fun increment() {
-		n = n + 1;
-		print n;
+fun test(fn) {
+	var n = "random";
+	for(var i = 1; i < 10; i = i + 1) {
+		n = n + i;
+		fn(i, n);
 	}
-
-	return increment;
 }
 
-test()();
+test(fun (a, b) {
+	print a;
+	print b;
+});
 
-print "Took " + ((clock() - startTime) / 1000 / 1000) + " " + "microseconds";
+fun () {
+	print "hello";
+}

@@ -58,4 +58,10 @@ class AstPrinter implements ExprVisitor<String> {
   String visitCallExpr(CallExpr expr) {
     return parenthesize(expr.callee.accept(this), [...?expr.arguments]);
   }
+
+  @override
+  String visitLambdaExpr(LambdaExpr expr) {
+    //TODO
+    throw UnimplementedError();
+  }
 }

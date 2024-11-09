@@ -246,6 +246,29 @@ class Parser {
     return expr;
   }
 
+  Expr _lambda() {
+    _consume(TokenType.leftParen, 'Expect ( before lambda parameters');
+
+    final List<Token> parameters = [];
+
+    if (!_check(TokenType.rightParen)) {
+      if (parameters.length >= 255) {
+        error(_peek(), 'Cannot have more than 255 parameters');
+      }
+      do {
+        parameters.add(_consume(TokenType.identifier, 'Expect parameter'));
+      } while (_match([TokenType.comma]));
+    }
+
+    _consume(TokenType.rightParen, 'Expect ) after parameters');
+
+    _consume(TokenType.leftBrace, 'Expect { before function body');
+
+    final body = _block();
+
+    return LambdaExpr(parameters: parameters, body: body);
+  }
+
   Expr _or() {
     Expr expr = _and();
 
@@ -357,6 +380,7 @@ class Parser {
         if (arguments.length >= 255) {
           error(_peek(), 'Cannot have more than 255 arguments.');
         }
+
         arguments.add(_expression());
       } while (_match([TokenType.comma]));
     }
@@ -381,6 +405,10 @@ class Parser {
       final expr = _expression();
       _consume(TokenType.rightParen, 'Expect \')\' after expression.');
       return GroupingExpr(expression: expr);
+    }
+
+    if (_match([TokenType.fun])) {
+      return _lambda();
     }
 
     throw error(_peek(), 'Expect expression');

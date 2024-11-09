@@ -5,6 +5,7 @@ Future<void> main(List<String> args) async {
     'Assign: Token name, Expr value',
     'Binary : Expr left, Token operator, Expr right',
     'Call: Expr callee, Token paren, List<Expr>? arguments',
+    'Lambda: List<Token>? parameters, List<Stmt> body',
     'Grouping : Expr expression',
     'Literal : Object? value',
     'Logical: Expr left, Token operator, Expr right',
