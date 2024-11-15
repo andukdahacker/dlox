@@ -95,7 +95,7 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   @override
   void visitVariableExpr(VariableExpr expr) {
     if (_scopes.isNotEmpty &&
-        _scopes.last[expr.name.lexeme] == VariableState.isDeclared) {
+        _scopes.last[expr.name.lexeme]?.state == VariableState.isDeclared) {
       LoxErrorHandler.instance.error(
           expr.name, 'Cannot read local variable in its own initializer');
     }
