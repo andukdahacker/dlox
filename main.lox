@@ -1,16 +1,14 @@
-fun test(fn) {
-	var n = "random";
-	for(var i = 1; i < 10; i = i + 1) {
-		n = n + i;
-		fn(i, n);
+var a = "global";
+
+{
+	fun showA() {
+		print a;
 	}
+
+	showA();
+
+	var a = "block";
+	var b = "hello";
+
+	showA();
 }
-
-test(fun (a, b) {
-	print a;
-	print b;
-});
-
-fun () {
-	print "hello";
-}();

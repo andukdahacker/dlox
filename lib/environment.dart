@@ -8,8 +8,30 @@ class Environment {
 
   final Map<String, Object?> values = {};
 
+  Object? getAt(int distance, String name) {
+    return _ancestor(distance).values[name];
+  }
+
+  Environment _ancestor(int distance) {
+    Environment environment = this;
+
+    for (int i = 0; i < distance; i++) {
+      if (environment._enclosingEnv == null) {
+        throw Exception(
+            'Cannot find enclosing environment. Variable is not defined');
+      }
+      environment = environment._enclosingEnv;
+    }
+
+    return environment;
+  }
+
   void define(Token name, Object? value) {
     values[name.lexeme] = value ?? UninitializedError(name);
+  }
+
+  void assignAt(int distance, Token name, Object? value) {
+    _ancestor(distance).values.addAll({name.lexeme: value});
   }
 
   void assign(Token name, Object? value) {

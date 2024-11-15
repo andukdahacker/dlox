@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dlox/intepreter.dart';
 import 'package:dlox/parser.dart';
+import 'package:dlox/resolver.dart';
 import 'package:dlox/scanner.dart';
 import 'package:dlox/token.dart';
 import 'package:dlox/token_type_enum.dart';
@@ -32,21 +33,23 @@ void runPrompt() {
 }
 
 void run(String source) {
-  try {
-    final scanner = Scanner(source);
+  final scanner = Scanner(source);
 
-    final List<Token> tokens = scanner.scanTokens();
+  final List<Token> tokens = scanner.scanTokens();
 
-    final Parser parser = Parser(tokens: tokens);
+  final Parser parser = Parser(tokens: tokens);
 
-    final stmts = parser.parse();
+  final stmts = parser.parse();
 
-    if (LoxErrorHandler.instance.hadError) return;
+  if (LoxErrorHandler.instance.hadError) return;
 
-    interpreter.interpret(stmts);
-  } catch (e) {
-    return;
-  }
+  final resolver = Resolver(interpreter);
+
+  resolver.resolveListStmt(stmts);
+
+  if (LoxErrorHandler.instance.hadError) return;
+
+  interpreter.interpret(stmts);
 }
 
 class LoxErrorHandler {

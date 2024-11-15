@@ -14,6 +14,8 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   late Environment _environment = globals;
 
+  final Map<Expr, int> locals = {};
+
   Interpreter() {
     globals.define(
       Token(type: TokenType.identifier, lexeme: 'clock', line: -1),
@@ -31,6 +33,10 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
     } on UninitializedError catch (e) {
       LoxErrorHandler.instance.error(e.token, 'Uninitialized variable');
     }
+  }
+
+  void resolve(Expr expr, int depth) {
+    locals.addAll({expr: depth});
   }
 
   void _execute(Stmt stmt) {
@@ -182,14 +188,30 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   @override
   Object? visitVariableExpr(VariableExpr expr) {
-    return _environment.getVar(expr.name);
+    return _lookUpVariable(expr.name, expr);
+  }
+
+  Object? _lookUpVariable(Token name, Expr expr) {
+    int? distance = locals[expr];
+
+    if (distance != null) {
+      return _environment.getAt(distance, name.lexeme);
+    } else {
+      return globals.getVar(name);
+    }
   }
 
   @override
   Object? visitAssignExpr(AssignExpr expr) {
     final value = _evaluate(expr.value);
 
-    _environment.assign(expr.name, value);
+    final distance = locals[expr];
+
+    if (distance != null) {
+      _environment.assignAt(distance, expr.name, value);
+    } else {
+      globals.assign(expr.name, value);
+    }
 
     return value;
   }
