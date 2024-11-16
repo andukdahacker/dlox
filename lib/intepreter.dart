@@ -2,10 +2,12 @@ import 'package:dlox/dlox.dart';
 import 'package:dlox/environment.dart';
 import 'package:dlox/lox_callable.dart';
 import 'package:dlox/lox_function.dart';
+import 'package:dlox/lox_instance.dart';
 import 'package:dlox/return.dart';
 import 'package:dlox/stmt.dart';
 
 import 'expr.dart';
+import 'lox_class.dart';
 import 'token.dart';
 import 'token_type_enum.dart';
 
@@ -292,7 +294,8 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   @override
   void visitFunctionStmt(FunctionStmt stmt) {
-    final function = LoxFunction(declaration: stmt, closure: _environment);
+    final function = LoxFunction(
+        declaration: stmt, closure: _environment, isInitializer: false);
 
     _environment.define(stmt.name, function);
   }
@@ -321,9 +324,64 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
         body: expr.body,
       ),
       closure: _environment,
+      isInitializer: false,
     );
 
     return function;
+  }
+
+  @override
+  void visitClassStmt(ClassStmt stmt) {
+    _environment.define(stmt.name, null);
+
+    Map<String, LoxFunction> methods = {};
+
+    for (final method in stmt.methods) {
+      final function = LoxFunction(
+          declaration: method,
+          closure: _environment,
+          isInitializer: method.name.lexeme == 'init');
+
+      methods[method.name.lexeme] = function;
+    }
+
+    final LoxClass loxClass =
+        LoxClass(name: stmt.name.lexeme, methods: methods);
+
+    _environment.assign(stmt.name, loxClass);
+  }
+
+  @override
+  Object? visitGetExpr(GetExpr expr) {
+    final object = _evaluate(expr.object);
+
+    if (object is LoxInstance) {
+      return object.get(expr.name);
+    }
+
+    throw RuntimeError(
+        token: expr.name, message: 'Only instances have properties');
+  }
+
+  @override
+  Object? visitSetExpr(SetExpr expr) {
+    final object = _evaluate(expr.object);
+
+    if (object is! LoxInstance) {
+      throw RuntimeError(
+          token: expr.name, message: 'Only instances have fields');
+    }
+
+    final value = _evaluate(expr.value);
+
+    object.set(expr.name, value);
+
+    return value;
+  }
+
+  @override
+  Object? visitThisExpr(ThisExpr expr) {
+    return _lookUpVariable(expr.keyword, expr);
   }
 }
 

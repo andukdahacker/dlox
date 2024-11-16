@@ -61,7 +61,23 @@ class AstPrinter implements ExprVisitor<String> {
 
   @override
   String visitLambdaExpr(LambdaExpr expr) {
-    //TODO
+    throw UnimplementedError();
+  }
+
+  @override
+  String visitGetExpr(GetExpr expr) {
+    throw UnimplementedError();
+  }
+
+  @override
+  String visitSetExpr(SetExpr expr) {
+    // TODO: implement visitSetExpr
+    throw UnimplementedError();
+  }
+
+  @override
+  String visitThisExpr(ThisExpr expr) {
+    // TODO: implement visitThisExpr
     throw UnimplementedError();
   }
 }

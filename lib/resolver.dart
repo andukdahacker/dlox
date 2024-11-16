@@ -2,10 +2,13 @@ import 'package:dlox/dlox.dart';
 import 'package:dlox/expr.dart';
 import 'package:dlox/intepreter.dart';
 import 'package:dlox/stmt.dart';
+import 'package:dlox/token_type_enum.dart';
 
 import 'token.dart';
 
-enum FunctionType { function, none }
+enum FunctionType { function, method, initializer, none }
+
+enum ClassType { tClass, none }
 
 enum VariableState { isDeclared, isDefined, isResolved }
 
@@ -20,6 +23,7 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   final Interpreter _interpreter;
   final List<Map<String, VariableInfo>> _scopes = [];
   FunctionType _currentFunction = FunctionType.none;
+  ClassType _currentClass = ClassType.none;
 
   Resolver(this._interpreter);
 
@@ -52,7 +56,8 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     final last = _scopes.last;
     last.forEach(
       (key, value) {
-        if (value.state != VariableState.isResolved) {
+        if (value.state != VariableState.isResolved &&
+            value.token.type != TokenType.tThis) {
           LoxErrorHandler.instance
               .error(value.token, 'Variable is defined but not used');
         }
@@ -205,6 +210,10 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
           .error(stmt.keyword, 'Cannot return from top-level code');
     }
     if (stmt.value != null) {
+      if (_currentFunction == FunctionType.initializer) {
+        LoxErrorHandler.instance
+            .error(stmt.keyword, 'Cannot return a value from an initializer');
+      }
       _resolveExpr(stmt.value!);
     }
   }
@@ -218,5 +227,55 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   void visitWhileStmt(WhileStmt stmt) {
     _resolveExpr(stmt.condition);
     _resolveStmt(stmt.body);
+  }
+
+  @override
+  void visitClassStmt(ClassStmt stmt) {
+    ClassType enclosingClass = _currentClass;
+    _currentClass = ClassType.tClass;
+    _declare(stmt.name);
+    _define(stmt.name);
+
+    _beginScope();
+    _scopes.last.addAll({
+      'this': VariableInfo(
+        token:
+            Token(type: TokenType.tThis, lexeme: 'this', line: stmt.name.line),
+        state: VariableState.isDefined,
+      )
+    });
+
+    for (final method in stmt.methods) {
+      FunctionType declaration = FunctionType.method;
+
+      if (method.name.lexeme == 'init') {
+        declaration = FunctionType.initializer;
+      }
+
+      _resolveFunction(method, declaration);
+    }
+
+    _endScope();
+    _currentClass = enclosingClass;
+  }
+
+  @override
+  void visitGetExpr(GetExpr expr) {
+    _resolveExpr(expr.object);
+  }
+
+  @override
+  void visitSetExpr(SetExpr expr) {
+    _resolveExpr(expr.value);
+    _resolveExpr(expr.object);
+  }
+
+  @override
+  void visitThisExpr(ThisExpr expr) {
+    if (_currentClass == ClassType.none) {
+      LoxErrorHandler.instance.error(
+          expr.keyword, 'Cannot use \'this\' keyword outside of a class');
+    }
+    _resolveLocal(expr, expr.keyword);
   }
 }

@@ -11,6 +11,9 @@ Future<void> main(List<String> args) async {
     'Logical: Expr left, Token operator, Expr right',
     'Unary: Token operator, Expr right',
     'Variable: Token name',
+    'Get: Expr object, Token name',
+    'Set: Expr object, Token name, Expr value',
+    'This: Token keyword',
   ]);
 
   await defineAst('./lib', 'Stmt', [
@@ -22,6 +25,7 @@ Future<void> main(List<String> args) async {
     'While: Expr condition, Stmt body',
     'Function: Token name, List<Token>? parameters, List<Stmt> body',
     'Return: Token keyword, Expr? value',
+    'Class: Token name, List<FunctionStmt> methods',
   ]);
 }
 

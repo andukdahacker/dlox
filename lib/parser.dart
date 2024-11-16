@@ -37,7 +37,26 @@ class Parser {
       }
     }
 
+    if (_match([TokenType.tClass])) {
+      return _classDeclaration();
+    }
+
     return _statement();
+  }
+
+  Stmt _classDeclaration() {
+    final name = _consume(TokenType.identifier, 'Expect class name');
+    _consume(TokenType.leftBrace, 'Expect { before class body');
+
+    final List<FunctionStmt> methods = [];
+
+    while (!_check(TokenType.rightBrace) && !_isAtEnd()) {
+      methods.add(_function('method'));
+    }
+
+    _consume(TokenType.rightBrace, 'Expect } after class body');
+
+    return ClassStmt(name: name, methods: methods);
   }
 
   Stmt _varDeclaration() {
@@ -246,6 +265,8 @@ class Parser {
       if (expr is VariableExpr) {
         final name = expr.name;
         return AssignExpr(name: name, value: value);
+      } else if (expr is GetExpr) {
+        return SetExpr(object: expr.object, name: expr.name, value: value);
       }
 
       error(equals, 'Invalid assignment target.');
@@ -372,6 +393,11 @@ class Parser {
     while (true) {
       if (_match([TokenType.leftParen])) {
         expr = _finishCall(expr);
+      } else if (_match([TokenType.dot])) {
+        final name =
+            _consume(TokenType.identifier, 'Expect property name after \'.\'.');
+
+        expr = GetExpr(name: name, object: expr);
       } else {
         break;
       }
@@ -413,6 +439,10 @@ class Parser {
       final expr = _expression();
       _consume(TokenType.rightParen, 'Expect \')\' after expression.');
       return GroupingExpr(expression: expr);
+    }
+
+    if (_match([TokenType.tThis])) {
+      return ThisExpr(keyword: _previous());
     }
 
     if (_match([TokenType.fun])) {

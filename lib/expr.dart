@@ -24,6 +24,12 @@ abstract class ExprVisitor<T> {
   T visitUnaryExpr(UnaryExpr expr);
 
   T visitVariableExpr(VariableExpr expr);
+
+  T visitGetExpr(GetExpr expr);
+
+  T visitSetExpr(SetExpr expr);
+
+  T visitThisExpr(ThisExpr expr);
 }
 
 class AssignExpr<T> extends Expr<T> {
@@ -158,5 +164,50 @@ class VariableExpr<T> extends Expr<T> {
   @override
   T accept(ExprVisitor<T> visitor) {
     return visitor.visitVariableExpr(this);
+  }
+}
+
+class GetExpr<T> extends Expr<T> {
+  final Expr object;
+
+  final Token name;
+
+  GetExpr({
+    required this.object,
+    required this.name,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitGetExpr(this);
+  }
+}
+
+class SetExpr<T> extends Expr<T> {
+  final Expr object;
+
+  final Token name;
+
+  final Expr value;
+
+  SetExpr({
+    required this.object,
+    required this.name,
+    required this.value,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitSetExpr(this);
+  }
+}
+
+class ThisExpr<T> extends Expr<T> {
+  final Token keyword;
+
+  ThisExpr({
+    required this.keyword,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitThisExpr(this);
   }
 }
