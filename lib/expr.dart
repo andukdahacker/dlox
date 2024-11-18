@@ -30,6 +30,8 @@ abstract class ExprVisitor<T> {
   T visitSetExpr(SetExpr expr);
 
   T visitThisExpr(ThisExpr expr);
+
+  T visitSuperExpr(SuperExpr expr);
 }
 
 class AssignExpr<T> extends Expr<T> {
@@ -209,5 +211,20 @@ class ThisExpr<T> extends Expr<T> {
   @override
   T accept(ExprVisitor<T> visitor) {
     return visitor.visitThisExpr(this);
+  }
+}
+
+class SuperExpr<T> extends Expr<T> {
+  final Token keyword;
+
+  final Token method;
+
+  SuperExpr({
+    required this.keyword,
+    required this.method,
+  });
+  @override
+  T accept(ExprVisitor<T> visitor) {
+    return visitor.visitSuperExpr(this);
   }
 }

@@ -146,10 +146,13 @@ class ReturnStmt<T> extends Stmt<T> {
 class ClassStmt<T> extends Stmt<T> {
   final Token name;
 
+  final VariableExpr? superclass;
+
   final List<FunctionStmt> methods;
 
   ClassStmt({
     required this.name,
+    required this.superclass,
     required this.methods,
   });
   @override

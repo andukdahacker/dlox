@@ -2,9 +2,9 @@ import 'package:dlox/intepreter.dart';
 import 'package:dlox/token.dart';
 
 class Environment {
-  final Environment? _enclosingEnv;
+  final Environment? enclosingEnv;
 
-  Environment({Environment? enclosing}) : _enclosingEnv = enclosing;
+  Environment({Environment? enclosing}) : enclosingEnv = enclosing;
 
   final Map<String, Object?> values = {};
 
@@ -16,11 +16,11 @@ class Environment {
     Environment environment = this;
 
     for (int i = 0; i < distance; i++) {
-      if (environment._enclosingEnv == null) {
+      if (environment.enclosingEnv == null) {
         throw Exception(
             'Cannot find enclosing environment. Variable is not defined');
       }
-      environment = environment._enclosingEnv;
+      environment = environment.enclosingEnv!;
     }
 
     return environment;
@@ -40,8 +40,8 @@ class Environment {
       return;
     }
 
-    if (_enclosingEnv != null) {
-      _enclosingEnv.assign(name, value);
+    if (enclosingEnv != null) {
+      enclosingEnv!.assign(name, value);
       return;
     }
 
@@ -60,8 +60,8 @@ class Environment {
       return values[name.lexeme];
     }
 
-    if (_enclosingEnv != null) {
-      return _enclosingEnv.getVar(name);
+    if (enclosingEnv != null) {
+      return enclosingEnv!.getVar(name);
     }
 
     throw RuntimeError(

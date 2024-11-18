@@ -80,4 +80,10 @@ class AstPrinter implements ExprVisitor<String> {
     // TODO: implement visitThisExpr
     throw UnimplementedError();
   }
+
+  @override
+  String visitSuperExpr(SuperExpr expr) {
+    // TODO: implement visitSuperExpr
+    throw UnimplementedError();
+  }
 }

@@ -332,7 +332,21 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
 
   @override
   void visitClassStmt(ClassStmt stmt) {
+    Object? superclass;
+    if (stmt.superclass != null) {
+      superclass = _evaluate(stmt.superclass!);
+      if (stmt.superclass is! LoxClass) {
+        throw RuntimeError(
+            token: stmt.superclass!.name,
+            message: 'Superclass must be a class');
+      }
+    }
     _environment.define(stmt.name, null);
+
+    if (stmt.superclass != null) {
+      _environment = Environment(enclosing: _environment);
+      _environment.define(stmt.superclass!.name, superclass);
+    }
 
     Map<String, LoxFunction> methods = {};
 
@@ -345,8 +359,15 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
       methods[method.name.lexeme] = function;
     }
 
-    final LoxClass loxClass =
-        LoxClass(name: stmt.name.lexeme, methods: methods);
+    final LoxClass loxClass = LoxClass(
+      name: stmt.name.lexeme,
+      methods: methods,
+      superclass: superclass as LoxClass,
+    );
+
+    if (stmt.superclass != null) {
+      _environment = _environment.enclosingEnv!;
+    }
 
     _environment.assign(stmt.name, loxClass);
   }
@@ -382,6 +403,27 @@ class Interpreter implements ExprVisitor<Object?>, StmtVisitor<void> {
   @override
   Object? visitThisExpr(ThisExpr expr) {
     return _lookUpVariable(expr.keyword, expr);
+  }
+
+  @override
+  Object? visitSuperExpr(SuperExpr expr) {
+    int? distance = locals[expr];
+    if (distance != null) {
+      final superclass = _environment.getAt(distance, 'super') as LoxClass;
+      final LoxInstance object =
+          _environment.getAt(distance - 1, 'this') as LoxInstance;
+
+      final method = superclass.findMethod(expr.method.lexeme);
+
+      if (method == null) {
+        throw RuntimeError(
+            token: expr.method,
+            message: 'Undefined property ${expr.method.lexeme}.');
+      }
+      return method.bind(object);
+    }
+
+    throw RuntimeError(token: expr.method, message: 'Cannot find superclass');
   }
 }
 

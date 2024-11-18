@@ -46,6 +46,13 @@ class Parser {
 
   Stmt _classDeclaration() {
     final name = _consume(TokenType.identifier, 'Expect class name');
+    VariableExpr? superclass;
+
+    if (_match([TokenType.less])) {
+      _consume(TokenType.identifier, 'Expect superclass name');
+      superclass = VariableExpr(name: _previous());
+    }
+
     _consume(TokenType.leftBrace, 'Expect { before class body');
 
     final List<FunctionStmt> methods = [];
@@ -56,7 +63,7 @@ class Parser {
 
     _consume(TokenType.rightBrace, 'Expect } after class body');
 
-    return ClassStmt(name: name, methods: methods);
+    return ClassStmt(name: name, methods: methods, superclass: superclass);
   }
 
   Stmt _varDeclaration() {
@@ -447,6 +454,15 @@ class Parser {
 
     if (_match([TokenType.fun])) {
       return _lambda();
+    }
+
+    if (_match([TokenType.tSuper])) {
+      final keyword = _previous();
+      _consume(TokenType.dot, 'Expect dot after super');
+      final method =
+          _consume(TokenType.identifier, 'Expect superclass method name');
+
+      return SuperExpr(keyword: keyword, method: method);
     }
 
     throw error(_peek(), 'Expect expression');

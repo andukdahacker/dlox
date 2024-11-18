@@ -1,13 +1,13 @@
-class Cake {
-	taste() {
-		var adjective = "delicious";
+fun fib(n) {
+	if(n < 2) return n;
 
-		print "The " + this.flavor + " cake is " + adjective + "!";
-	}
+	return fib(n - 1) + fib(n - 2);
 }
 
-var cake = Cake();
+var before = clock();
 
-cake.flavor = "German chocolate";
+print fib(30);
 
-cake.taste();
+var after = clock();
+
+print after - before;
